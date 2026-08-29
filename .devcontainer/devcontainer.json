@@ -1,0 +1,76 @@
+{
+  "name": "Free Running App Devcontainer",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "args": {
+      "TZ": "${localEnv:TZ:America/Los_Angeles}",
+      "CLAUDE_CODE_VERSION": "latest",
+      "GIT_DELTA_VERSION": "0.18.2",
+      "ZSH_IN_DOCKER_VERSION": "1.2.0",
+      "FLUTTER_CHANNEL": "stable",
+      "JAVA_VERSION": "21",
+      "ANDROID_BOOTSTRAP_TOOLS_VERSION": "11076708"
+    }
+  },
+  "runArgs": [
+    "--cap-add=NET_ADMIN",
+    "--cap-add=NET_RAW",
+    "--hostname",
+    "free-running-app-devcontainer",
+    "--name",
+    "free-running-app-devcontainer"
+  ],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "anthropic.claude-code",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "eamodio.gitlens",
+        "Dart-Code.dart-code",
+        "Dart-Code.flutter",
+        "ms-azuretools.vscode-containers"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.codeActionsOnSave": {
+          "source.fixAll.eslint": "explicit"
+        },
+        "[dart]": {
+          "editor.defaultFormatter": "Dart-Code.dart-code",
+          "editor.rulers": [80],
+          "editor.selectionHighlight": false,
+          "editor.tabCompletion": "onlySnippets",
+          "editor.wordBasedSuggestions": "off"
+        },
+        "dart.flutterSdkPath": "/home/node/flutter",
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "terminal.integrated.profiles.linux": {
+          "bash": {
+            "path": "bash",
+            "icon": "terminal-bash"
+          },
+          "zsh": {
+            "path": "zsh"
+          }
+        }
+      }
+    }
+  },
+  "remoteUser": "node",
+  "mounts": [
+    "source=claude-code-bashhistory-${devcontainerId},target=/commandhistory,type=volume",
+    "source=claude-code-config-${devcontainerId},target=/home/node/.claude,type=volume",
+    "source=free-running-app-gradle-${devcontainerId},target=/home/node/.gradle,type=volume"
+  ],
+  "containerEnv": {
+    "NODE_OPTIONS": "--max-old-space-size=4096",
+    "CLAUDE_CONFIG_DIR": "/home/node/.claude",
+    "POWERLEVEL9K_DISABLE_GITSTATUS": "true"
+  },
+  "postCreateCommand": "flutter doctor  --android-licenses",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=delegated",
+  "workspaceFolder": "/workspace",
+  "waitFor": "postStartCommand"
+}

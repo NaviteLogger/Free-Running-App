@@ -1,0 +1,20 @@
+{
+  "name": "@freerunning/server",
+  "version": "1.0.0",
+  "scripts": {
+    "typecheck": "tsc",
+    "typecheck:watch": "tsc --watch",
+    "dev": "node --watch src/main.ts",
+    "start": "node src/main.ts",
+    "typecheck:config": "tsc -p tripwire >/dev/null 2>&1 && { echo \"FAIL: tripwire compiled clean - the strict config regressed\"; exit 1; } || echo \"OK: config still rejects every tripwire violation\""
+  },
+  "type": "module",
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "typescript": "^7.0.2"
+  },
+  "private": true,
+  "engines": {
+    "node": ">=24"
+  }
+}

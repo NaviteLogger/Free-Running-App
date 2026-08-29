@@ -1,0 +1,50 @@
+# ---- Flutter / Dart ----
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+*.lock.bak
+app/.flutter-plugins
+app/.flutter-plugins-dependencies
+# pubspec.lock IS committed for the app (it is an application, not a library).
+
+# ---- Android ----
+app/android/.gradle/
+app/android/captures/
+app/android/local.properties
+app/android/key.properties
+*.jks
+*.keystore
+*.apk
+*.aab
+
+# ---- Node / server ----
+node_modules/
+dist/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+
+# ---- Runtime data (never commit location history) ----
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.db
+*.db-wal
+*.db-shm
+data/
+raw-points/
+*.gpx
+# Phase 0 fix logs are raw location history — same rule as everything above.
+*.jsonl
+logs/
+
+# ---- Editor / OS ----
+.idea/
+*.iml
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.DS_Store
