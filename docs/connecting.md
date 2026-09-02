@@ -26,41 +26,49 @@ Leave that screen open. You need two numbers from it and they are different.
 
 ## Once per phone: pair
 
-On the phone, still on the Wireless debugging screen, tap
-**Pair device with pairing code**. A dialog appears with an address and a
-six-digit code. It expires after a minute or two, so have the terminal ready.
+Nothing on this page is a working address. Every number you need is on your own
+phone screen, and no example here will connect to it.
 
-In the container, using the address **and the code from the pairing dialog**:
-
-```bash
-adb pair <IP>:<PAIRING_PORT> <SIX_DIGIT_CODE>
-```
-
-All three come from the pairing dialog, which shows something like:
+On the phone, on the Wireless debugging screen, tap
+**Pair device with pairing code**. A dialog opens showing two things:
 
 ```
 Pair with device
-  Wi-Fi pairing code:  418362
-  IP address & Port:   192.168.0.183:41234
+
+  Wi-Fi pairing code
+  NNNNNN                      <- six digits
+
+  IP address & Port
+  AAA.BBB.CCC.DDD:PPPPP       <- the pairing address
 ```
 
-so that dialog would mean:
+Type this in the container, substituting from that dialog:
 
-```bash
-adb pair 192.168.0.183:41234 418362
-```
+    adb pair AAA.BBB.CCC.DDD:PPPPP NNNNNN
+
+Three values, all from that one dialog: the IP, the port after the colon, and
+the six-digit code. Nothing here is quoted or escaped, so type it exactly as the
+phone shows it.
+
+The dialog expires after a minute or two. If it closes, open it again and you
+get a fresh code and a fresh port.
 
 Expected:
 
-```
-Successfully paired to 192.168.0.183:41234 [guid=adb-...]
-```
+    Successfully paired to AAA.BBB.CCC.DDD:PPPPP [guid=adb-...]
 
-Close the dialog. You never need it again unless you reset the phone.
+If you get `protocol fault (couldn't read status message): Success`, nothing
+answered at that address. It means one of:
 
-> The port in the pairing dialog is used only by `adb pair`. Everything after
-> this uses the port on the main Wireless debugging screen, which is a
-> different number.
+- the numbers came from this page instead of your phone
+- the dialog expired and the port is no longer listening
+- the phone is on a different network from this machine
+
+Close the dialog once pairing succeeds. That port is never used again.
+
+> **The pairing port is not the connect port.** Once paired, the main Wireless
+> debugging screen shows a *different* port under the device name. Everything
+> after this uses that one.
 
 ---
 
@@ -80,16 +88,19 @@ pairing one.
 Expected:
 
 ```
-0/3  checking 192.168.0.183:37129 is reachable
-1/3  connecting to 192.168.0.183:37129
-connected to 192.168.0.183:37129
+0/3  checking AAA.BBB.CCC.DDD:QQQQQ is reachable
+1/3  connecting to AAA.BBB.CCC.DDD:QQQQQ
+connected to AAA.BBB.CCC.DDD:QQQQQ
 2/3  waiting for the device to be ready
 3/3  tunnelling phone localhost:8080 to this container
 List of devices attached
-192.168.0.183:37129	device
+AAA.BBB.CCC.DDD:QQQQQ	device
 reverse tunnels:
-192.168.0.183:37129 tcp:8080 tcp:8080
+AAA.BBB.CCC.DDD:QQQQQ tcp:8080 tcp:8080
 ```
+
+`QQQQQ` is the connect port, which is not the same number as the pairing port
+`PPPPP` used above.
 
 The script checks the address answers before handing it to adb, so a wrong one
 says so plainly instead of producing a protocol fault.
