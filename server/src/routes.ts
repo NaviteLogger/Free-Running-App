@@ -1,6 +1,8 @@
+import { createHash } from 'node:crypto';
 import type { DatabaseSync } from 'node:sqlite';
 
 import { countActivities, getActivity, listActivities } from './db.ts';
+import { fromGpx, toGpx } from './gpx.ts';
 import { ingest } from './ingest.ts';
 import { HttpError } from './http/router.ts';
 import type { Route } from './http/router.ts';
@@ -8,6 +10,7 @@ import type { RawStore } from './raw-store.ts';
 import { parseUpload } from './upload-schema.ts';
 
 export const UPLOAD_PATH = '/api/activities';
+export const IMPORT_PATH = '/api/import';
 
 export function buildRoutes(db: DatabaseSync, store: RawStore): Route[] {
   return [
@@ -63,6 +66,50 @@ export function buildRoutes(db: DatabaseSync, store: RawStore): Route[] {
         const activity = getActivity(db, id);
         if (activity === null) throw new HttpError(404, 'no such activity');
         return { status: 200, body: activity };
+      },
+    },
+
+    {
+      method: 'GET',
+      path: '/api/activities/:id/gpx',
+      handler: async (ctx) => {
+        const id = ctx.params['id'];
+        if (id === undefined) throw new HttpError(400, 'missing id');
+        if (!(await store.has(id))) throw new HttpError(404, 'no such activity');
+
+        const raw = await store.read(id);
+        return {
+          status: 200,
+          text: toGpx(raw),
+          headers: {
+            'content-type': 'application/gpx+xml; charset=utf-8',
+            'content-disposition': `attachment; filename="${id}.gpx"`,
+          },
+        };
+      },
+    },
+
+    {
+      method: 'POST',
+      path: IMPORT_PATH,
+      handler: async (ctx) => {
+        const xml = await ctx.text();
+
+        // The id comes from the bytes of the file, so importing the same export
+        // twice lands on the same activity instead of making a second copy.
+        // GPX carries no identifier of its own.
+        const id = `gpx-${createHash('sha256').update(xml).digest('hex').slice(0, 32)}`;
+
+        const parsed = fromGpx(xml, id);
+        if (!parsed.ok) {
+          throw new HttpError(422, 'could not read that GPX file', parsed.problems);
+        }
+
+        const result = await ingest(db, store, parsed.raw, 'gpx');
+        return {
+          status: result.outcome === 'created' ? 201 : 200,
+          body: result,
+        };
       },
     },
 

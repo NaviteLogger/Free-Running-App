@@ -205,6 +205,68 @@ describe('reading activities', () => {
   });
 });
 
+describe('gpx over http', () => {
+  it('exports an uploaded activity as a downloadable file', async () => {
+    await post('/api/activities', makeActivity('gpx-export'));
+    const res = await fetch(`${base}/api/activities/gpx-export/gpx`, {
+      headers: auth(),
+    });
+
+    assert.equal(res.status, 200);
+    assert.match(res.headers.get('content-type') ?? '', /gpx\+xml/);
+    assert.match(res.headers.get('content-disposition') ?? '', /gpx-export\.gpx/);
+
+    const xml = await res.text();
+    assert.ok(xml.startsWith('<?xml'));
+    assert.ok(xml.includes('<trkpt'));
+  });
+
+  it('imports a GPX file', async () => {
+    const exported = await (
+      await fetch(`${base}/api/activities/gpx-export/gpx`, { headers: auth() })
+    ).text();
+
+    const res = await fetch(`${base}/api/import`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/gpx+xml', ...auth() },
+      body: exported,
+    });
+    assert.equal(res.status, 201);
+    const body = (await res.json()) as { id: string; outcome: string };
+    assert.ok(body.id.startsWith('gpx-'));
+  });
+
+  it('importing the same file twice makes one activity', async () => {
+    const exported = await (
+      await fetch(`${base}/api/activities/gpx-export/gpx`, { headers: auth() })
+    ).text();
+
+    const again = await fetch(`${base}/api/import`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/gpx+xml', ...auth() },
+      body: exported,
+    });
+    assert.equal(again.status, 200);
+    assert.equal(((await again.json()) as { outcome: string }).outcome, 'duplicate');
+  });
+
+  it('explains why a bad GPX file was refused', async () => {
+    const res = await fetch(`${base}/api/import`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/gpx+xml', ...auth() },
+      body: '<not-gpx/>',
+    });
+    assert.equal(res.status, 422);
+    const body = (await res.json()) as { problems: string[] };
+    assert.ok(body.problems.length > 0);
+  });
+
+  it('needs a token like everything else', async () => {
+    const res = await fetch(`${base}/api/import`, { method: 'POST', body: '<gpx/>' });
+    assert.equal(res.status, 401);
+  });
+});
+
 describe('routing', () => {
   it('answers 404 for an unknown path', async () => {
     const res = await fetch(`${base}/nothing/here`, { headers: auth() });

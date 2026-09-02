@@ -2,12 +2,22 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../data/settings_repository.dart';
 import '../recording/recorder.dart';
+import '../sync/sync_service.dart';
+import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({required this.recorder, super.key});
+  const HomeScreen({
+    required this.recorder,
+    required this.sync,
+    required this.settings,
+    super.key,
+  });
 
   final Recorder recorder;
+  final SyncService sync;
+  final SettingsRepository settings;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -17,6 +27,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Timer? _ticker;
 
   Recorder get _recorder => widget.recorder;
+  SyncService get _sync => widget.sync;
+  int _pending = 0;
 
   @override
   void initState() {
@@ -28,9 +40,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     });
     // Deferred until after the first frame so a dialog has a Navigator to
     // attach to.
+    _sync.addListener(_onChange);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(_recorder.refreshDozeExemption());
       unawaited(_offerRecoveryIfNeeded());
+      // Runs that failed to upload last time get another go on every launch.
+      unawaited(_syncAndRefresh());
     });
   }
 
@@ -38,6 +53,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _recorder.removeListener(_onChange);
+    _sync.removeListener(_onChange);
     _ticker?.cancel();
     super.dispose();
   }
@@ -47,6 +63,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     unawaited(_recorder.noteLifecycle(state.name));
     if (state == AppLifecycleState.resumed) {
       unawaited(_recorder.refreshDozeExemption());
+      // Coming back to the app is a good moment to retry: it usually means the
+      // phone is out of a pocket and may have found a network.
+      unawaited(_syncAndRefresh());
     }
   }
 
@@ -93,6 +112,26 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     } else {
       await _recorder.salvageInterrupted(interrupted);
     }
+  }
+
+  Future<void> _syncAndRefresh() async {
+    await _sync.syncNow();
+    final pending = await _sync.pendingCount();
+    if (mounted) setState(() => _pending = pending);
+  }
+
+  Future<void> _stopAndUpload() async {
+    await _recorder.finish();
+    await _syncAndRefresh();
+  }
+
+  Future<void> _openSettings() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => SettingsScreen(settings: widget.settings),
+      ),
+    );
+    await _syncAndRefresh();
   }
 
   Future<void> _start() async {
@@ -149,6 +188,21 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     final active = _recorder.isActive;
 
     return Scaffold(
+      appBar: AppBar(
+        title: Text(_pending == 0 ? '' : '$_pending waiting to upload'),
+        actions: [
+          IconButton(
+            onPressed: _sync.isRunning ? null : _syncAndRefresh,
+            icon: const Icon(Icons.cloud_upload_outlined),
+            tooltip: 'Upload now',
+          ),
+          IconButton(
+            onPressed: _openSettings,
+            icon: const Icon(Icons.settings_outlined),
+            tooltip: 'Server',
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -224,7 +278,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   const SizedBox(width: 12),
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: active ? _recorder.finish : null,
+                      onPressed: active ? _stopAndUpload : null,
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 20),
                       ),

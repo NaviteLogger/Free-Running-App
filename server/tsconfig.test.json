@@ -1,0 +1,16 @@
+{
+  // Tests run in the same Node process as the server, but one of them parses
+  // GPX with @tmcw/togeojson to check our output against a reader we did not
+  // write. That library is browser-shaped and needs DOM types.
+  //
+  // Those types live here and not in tsconfig.json on purpose: the server must
+  // not be able to reference `document` or `window` by accident. The strictness
+  // is unchanged, since both configs extend the same base.
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["es2024", "dom"],
+    "types": ["node", "geojson"],
+    "tsBuildInfoFile": "node_modules/.cache/tsc/test.tsbuildinfo"
+  },
+  "include": ["test/**/*.ts", "src/**/*.ts"]
+}

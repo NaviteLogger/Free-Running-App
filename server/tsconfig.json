@@ -6,5 +6,5 @@
     // anything outside src/, including the tests.
     "tsBuildInfoFile": "node_modules/.cache/tsc/server.tsbuildinfo"
   },
-  "include": ["src/**/*.ts", "test/**/*.ts"]
+  "include": ["src/**/*.ts"]
 }

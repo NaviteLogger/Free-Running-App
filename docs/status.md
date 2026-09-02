@@ -48,11 +48,12 @@ Nothing produces that format now. See Open problems.
 | Summary table rebuildable from raw points alone | Done, tested |
 | Server database and token | Done |
 | Server: routes, token check, rate limit | Done |
-| Upload from the phone, with a retry queue | Next |
-| GPX import and export | Not started |
+| Upload from the phone, with a retry queue | Done |
+| GPX import and export | Done |
 | Elevation from a height map | Not started |
+| Running against the real server from a phone | **Not yet** |
 
-62 server tests, 18 app tests. Both run in CI on every push.
+82 server tests, 37 app tests. Both run in CI on every push.
 
 Processing rules that are checked by tests:
 
@@ -71,6 +72,18 @@ Processing rules that are checked by tests:
 - Deleting every summary row and reprocessing the raw files reproduces the
   numbers exactly.
 - An id containing `../` is refused before it reaches the filesystem.
+
+Phone upload queue:
+
+- A finished run is sent, then marked uploaded only after the server confirms.
+- A temporary failure keeps the run queued and stops after the first one,
+  instead of retrying twenty runs against a network that is down.
+- A rejected run is reported and not retried forever.
+- The payload field names are asserted against the server's schema, so renaming
+  a field breaks a test instead of failing on a phone.
+- GPX exports are read back by @tmcw/togeojson, a parser we did not write.
+- Importing the same GPX file twice makes one activity, because the id comes
+  from the bytes of the file.
 
 Server behaviour checked against a real listening server, not mocks:
 
@@ -142,3 +155,5 @@ to collect. Record them while using the app in Phase 1.
 | 2026-09-02 | HTTP layer: routes on the built-in URLPattern, bearer token, rate limit. |
 | 2026-09-02 | Hand-written upload validation replaced with zod. |
 | 2026-09-02 | CI added. Formatting, type check, tests, and an APK build. |
+| 2026-09-02 | GPX import and export, checked against a third-party parser. |
+| 2026-09-02 | Phone upload queue, settings screen, and a schema v2 migration. |

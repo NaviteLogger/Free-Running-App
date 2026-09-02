@@ -2,7 +2,7 @@
   "name": "@freerunning/server",
   "version": "1.0.0",
   "scripts": {
-    "typecheck": "tsc",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.test.json",
     "typecheck:watch": "tsc --watch",
     "dev": "node --watch src/main.ts",
     "start": "node src/main.ts",
@@ -13,7 +13,10 @@
   },
   "type": "module",
   "devDependencies": {
+    "@tmcw/togeojson": "^7.1.2",
+    "@types/geojson": "^7946.0.16",
     "@types/node": "^24.13.3",
+    "@xmldom/xmldom": "^0.9.12",
     "prettier": "^3.9.6",
     "typescript": "^7.0.2"
   },
@@ -22,6 +25,7 @@
     "node": ">=24"
   },
   "dependencies": {
+    "fast-xml-parser": "^5.11.1",
     "zod": "^4.5.4"
   }
 }

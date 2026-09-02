@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 /// [_createStatements] in place once a build has shipped — the migration is
 /// what upgrades an existing database, and a phone in the field only ever runs
 /// migrations.
-const int schemaVersion = 1;
+const int schemaVersion = 2;
 
 Future<Database> openTrackerDatabase({String? overridePath}) async {
   final path = overridePath ?? p.join(await getDatabasesPath(), 'tracker.db');
@@ -39,12 +39,27 @@ Future<void> _configure(Database db) async {
   await db.execute('PRAGMA foreign_keys=ON');
 }
 
+/// Steps are applied in order, so a phone that skipped several releases still
+/// lands in the right place.
 Future<void> _migrate(Database db, int from, int to) async {
-  // v1 is the initial schema; there is nothing to migrate from yet. Each future
-  // version gets its own `if (from < n)` block, applied in order, so a phone
-  // that skipped three releases still lands correctly.
-  throw UnsupportedError('No migration path from $from to $to');
+  if (from < 2) {
+    await db.execute(_settingsTable);
+  }
+  if (to > schemaVersion) {
+    throw UnsupportedError(
+      'Database is version $to, this build only knows $schemaVersion',
+    );
+  }
 }
+
+/// Server address and API token. Kept in the same database as everything else
+/// so there is one file to back up and one file to delete.
+const String _settingsTable = '''
+  CREATE TABLE settings (
+    key   TEXT PRIMARY KEY NOT NULL,
+    value TEXT NOT NULL
+  )
+''';
 
 const List<String> _createStatements = [
   // The session id is generated on the phone, not the server. That is what
@@ -135,4 +150,6 @@ const List<String> _createStatements = [
     PRIMARY KEY (session_id, seq)
   ) WITHOUT ROWID
   ''',
+
+  _settingsTable,
 ];

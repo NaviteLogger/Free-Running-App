@@ -22,8 +22,10 @@ export type Ctx = {
   headers: NodeJS.Dict<string | string[]>;
   /** Client address, for rate limiting. */
   ip: string;
-  /** Decoded, size-limited request body. Throws HttpError on a bad body. */
+  /** Decoded, size-limited body parsed as JSON. Throws HttpError on a bad body. */
   body: () => Promise<unknown>;
+  /** The same bytes as text, for XML and other non-JSON uploads. */
+  text: () => Promise<string>;
 };
 
 export type Handler = (ctx: Ctx) => Promise<Reply> | Reply;
@@ -104,7 +106,10 @@ export function createHandler(
       params,
       headers: req.headers,
       ip: clientIp(req),
-      body: () => readJsonBody(req),
+      // Read once and shared: a request body is a stream and can only be
+      // consumed a single time.
+      body: async () => parseJson(await readBody(req)),
+      text: async () => (await readBody(req)).toString('utf8'),
     };
 
     try {
@@ -164,31 +169,42 @@ function clientIp(req: IncomingMessage): string {
     : (req.socket.remoteAddress ?? 'unknown');
 }
 
-async function readJsonBody(req: IncomingMessage): Promise<unknown> {
-  const chunks: Buffer[] = [];
-  let total = 0;
+const bodyCache = new WeakMap<IncomingMessage, Promise<Buffer>>();
 
-  for await (const chunk of req) {
-    const buffer = chunk as Buffer;
-    total += buffer.byteLength;
-    if (total > MAX_BODY_BYTES) {
-      throw new HttpError(413, 'body too large');
+function readBody(req: IncomingMessage): Promise<Buffer> {
+  const existing = bodyCache.get(req);
+  if (existing !== undefined) return existing;
+
+  const reading = (async () => {
+    const chunks: Buffer[] = [];
+    let total = 0;
+
+    for await (const chunk of req) {
+      const buffer = chunk as Buffer;
+      total += buffer.byteLength;
+      if (total > MAX_BODY_BYTES) throw new HttpError(413, 'body too large');
+      chunks.push(buffer);
     }
-    chunks.push(buffer);
-  }
 
-  let raw = Buffer.concat(chunks);
-  if (raw.byteLength === 0) throw new HttpError(400, 'body is empty');
+    const raw = Buffer.concat(chunks);
+    if (raw.byteLength === 0) throw new HttpError(400, 'body is empty');
 
-  const encoding = req.headers['content-encoding'];
-  if (typeof encoding === 'string' && encoding.toLowerCase().includes('gzip')) {
-    try {
-      raw = gunzipSync(raw);
-    } catch {
-      throw new HttpError(400, 'body is not valid gzip');
+    const encoding = req.headers['content-encoding'];
+    if (typeof encoding === 'string' && encoding.toLowerCase().includes('gzip')) {
+      try {
+        return gunzipSync(raw);
+      } catch {
+        throw new HttpError(400, 'body is not valid gzip');
+      }
     }
-  }
+    return raw;
+  })();
 
+  bodyCache.set(req, reading);
+  return reading;
+}
+
+function parseJson(raw: Buffer): unknown {
   try {
     return JSON.parse(raw.toString('utf8')) as unknown;
   } catch {

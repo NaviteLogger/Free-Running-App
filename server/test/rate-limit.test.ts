@@ -23,6 +23,7 @@ function ctxFrom(ip: string): Ctx {
     headers: {},
     ip,
     body: () => Promise.resolve({}),
+    text: () => Promise.resolve(''),
   };
 }
 
