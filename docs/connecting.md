@@ -15,12 +15,56 @@ Wireless debugging screen has a different port, used by everything else.
 
 ## Once per phone: turn on wireless debugging
 
-On the phone:
+### Unlock Developer options
 
-1. **Settings → About phone** → tap **Build number** seven times.
-2. **Settings → System → Developer options** → turn on **Wireless debugging**.
+**Settings → About phone → tap Build number seven times.** It counts down at
+you, then says developer mode is on.
 
-Leave that screen open. You need two numbers from it and they are different.
+On some OnePlus builds the build number is one level deeper, under
+**About phone → Version**. If tapping the version panel does nothing, look for
+a row literally called `Build number` and tap that.
+
+### Find Wireless debugging
+
+OnePlus moves Developer options between releases. It has been under Settings →
+System, under Settings → Additional settings, and near the bottom of the main
+Settings list.
+
+**Do not hunt for it.** Use the search box at the top of Settings and type:
+
+    wireless debugging
+
+Tap the result. This works whatever the menu looks like on your build, and it
+is what to do again after any system update moves things.
+
+### Open the screen, do not just flip the switch
+
+This is the part that catches people, and it is probably what is happening now.
+
+The Wireless debugging row has a toggle on the right and a label on the left.
+**Turning the toggle on does not show you anything.** You have to tap the
+*words* "Wireless debugging" to open its own screen.
+
+That screen is where everything lives:
+
+```
+← Wireless debugging                    [ON]
+
+  Device name
+  OnePlus 12
+
+  IP address & Port
+  AAA.BBB.CCC.DDD:QQQQQ          <- the CONNECT address, used every session
+
+  Pair device with pairing code  <- tap this, once, to pair
+  Pair device with QR code
+```
+
+If you are looking at a list of settings rows and no `Pair device with pairing
+code`, you are one level too high. Tap the label.
+
+The toggle must also be on, and it turns itself off when the phone leaves the
+network or reboots.
 
 ---
 
@@ -259,3 +303,6 @@ process is never directly exposed. Set `HOST` to change that.
 | Pairing code refused | The dialog expired. Open it again for a fresh code and port. |
 | `protocol fault (couldn't read status message)` | Nothing answered at that address. Almost always a copied example, or the pairing port used where the connect port belongs. |
 | Everything worked yesterday | The tunnel is cleared on disconnect. Re-run `tools/phone-connect.sh`. |
+| No `Pair device with pairing code` anywhere | You are on the Developer options list, not inside Wireless debugging. Tap the words, not the toggle. |
+| No Developer options in Settings | Build number was not tapped seven times, or it is under About phone → Version on this build. |
+| Cannot find Developer options after enabling it | Search `wireless debugging` in the Settings search box instead of looking through menus. |
