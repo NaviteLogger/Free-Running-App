@@ -1,16 +1,5 @@
 # Connecting the phone
 
-Anything in ANGLE BRACKETS is a value you read off your phone. Replace it,
-brackets and all. Copying the examples as written gives you
-
-    error: protocol fault (couldn't read status message): Success
-
-which is adb's way of saying nothing answered at that address.
-
-The phone shows you **two different addresses** and it is easy to use the wrong
-one. The pairing dialog has its own port, used once by `adb pair`. The main
-Wireless debugging screen has a different port, used by everything else.
-
 ---
 
 ## Once per phone: turn on wireless debugging
@@ -20,30 +9,14 @@ Wireless debugging screen has a different port, used by everything else.
 **Settings → About phone → tap Build number seven times.** It counts down at
 you, then says developer mode is on.
 
-On some OnePlus builds the build number is one level deeper, under
-**About phone → Version**. If tapping the version panel does nothing, look for
-a row literally called `Build number` and tap that.
-
 ### Find Wireless debugging
 
-OnePlus moves Developer options between releases. It has been under Settings →
-System, under Settings → Additional settings, and near the bottom of the main
-Settings list.
+Settings → System & update → Developer Options
 
-**Do not hunt for it.** Use the search box at the top of Settings and type:
+### Find "Wireless debugging
 
-    wireless debugging
-
-Tap the result. This works whatever the menu looks like on your build, and it
-is what to do again after any system update moves things.
-
-### Open the screen, do not just flip the switch
-
-This is the part that catches people, and it is probably what is happening now.
-
-The Wireless debugging row has a toggle on the right and a label on the left.
-**Turning the toggle on does not show you anything.** You have to tap the
-*words* "Wireless debugging" to open its own screen.
+> Enable
+> Enter it:
 
 That screen is where everything lives:
 
@@ -59,12 +32,6 @@ That screen is where everything lives:
   Pair device with pairing code  <- tap this, once, to pair
   Pair device with QR code
 ```
-
-If you are looking at a list of settings rows and no `Pair device with pairing
-code`, you are one level too high. Tap the label.
-
-The toggle must also be on, and it turns itself off when the phone leaves the
-network or reboots.
 
 ---
 
@@ -104,14 +71,14 @@ Expected:
 If you get `protocol fault (couldn't read status message): Success`, nothing
 answered at that address. It means one of:
 
-- the numbers came from this page instead of your phone
+- the numbers were copied from this page
 - the dialog expired and the port is no longer listening
 - the phone is on a different network from this machine
 
 Close the dialog once pairing succeeds. That port is never used again.
 
 > **The pairing port is not the connect port.** Once paired, the main Wireless
-> debugging screen shows a *different* port under the device name. Everything
+> debugging screen shows a _different_ port under the device name. Everything
 > after this uses that one.
 
 ---
@@ -147,7 +114,7 @@ AAA.BBB.CCC.DDD:QQQQQ tcp:8080 tcp:8080
 `PPPPP` used above.
 
 The script checks the address answers before handing it to adb, so a wrong one
-says so plainly instead of producing a protocol fault.
+says what to check, in place of adb's protocol fault message.
 
 If you would rather run the two commands yourself:
 
@@ -229,10 +196,10 @@ exactly what the test is trying to measure.
 
 In the app, tap the **gear** icon:
 
-| Field | Value |
-|---|---|
-| Server address | `http://localhost:8080` |
-| API token | the token the server printed |
+| Field          | Value                        |
+| -------------- | ---------------------------- |
+| Server address | `http://localhost:8080`      |
+| API token      | the token the server printed |
 
 Tap **Test connection**. It calls `/health`, which needs no token, so a failure
 here is the tunnel or the address and not the token.
@@ -280,10 +247,10 @@ head -5 run.gpx
 None of the tunnel applies. Caddy terminates TLS and the app points at the real
 address:
 
-| Field | Value |
-|---|---|
-| Server address | `https://run.example.com` |
-| API token | from that server's first start |
+| Field          | Value                          |
+| -------------- | ------------------------------ |
+| Server address | `https://run.example.com`      |
+| API token      | from that server's first start |
 
 The server binds to `127.0.0.1` and Caddy reaches it over loopback, so the
 process is never directly exposed. Set `HOST` to change that.
@@ -292,17 +259,17 @@ process is never directly exposed. Set `HOST` to change that.
 
 ## When something does not work
 
-| Symptom | Cause and fix |
-|---|---|
-| `adb devices` is empty | Re-run `tools/phone-connect.sh`. |
-| `failed to connect` | Wireless debugging switched itself off. Turn it on and re-run. |
-| `device unauthorized` | Pairing was lost. Pair again. |
-| Test connection: no answer | Tunnel missing or server not running. Check `adb reverse --list` and `curl http://127.0.0.1:8080/health`. |
-| Uploads give 401 | Wrong token. Read it back with the command above. |
-| `CLEARTEXT communication not permitted` | The address is `http://` and not localhost. Use `https://`. |
-| Pairing code refused | The dialog expired. Open it again for a fresh code and port. |
+| Symptom                                         | Cause and fix                                                                                                              |
+| ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `adb devices` is empty                          | Re-run `tools/phone-connect.sh`.                                                                                           |
+| `failed to connect`                             | Wireless debugging switched itself off. Turn it on and re-run.                                                             |
+| `device unauthorized`                           | Pairing was lost. Pair again.                                                                                              |
+| Test connection: no answer                      | Tunnel missing or server not running. Check `adb reverse --list` and `curl http://127.0.0.1:8080/health`.                  |
+| Uploads give 401                                | Wrong token. Read it back with the command above.                                                                          |
+| `CLEARTEXT communication not permitted`         | The address is `http://` and not localhost. Use `https://`.                                                                |
+| Pairing code refused                            | The dialog expired. Open it again for a fresh code and port.                                                               |
 | `protocol fault (couldn't read status message)` | Nothing answered at that address. Almost always a copied example, or the pairing port used where the connect port belongs. |
-| Everything worked yesterday | The tunnel is cleared on disconnect. Re-run `tools/phone-connect.sh`. |
-| No `Pair device with pairing code` anywhere | You are on the Developer options list, not inside Wireless debugging. Tap the words, not the toggle. |
-| No Developer options in Settings | Build number was not tapped seven times, or it is under About phone → Version on this build. |
-| Cannot find Developer options after enabling it | Search `wireless debugging` in the Settings search box instead of looking through menus. |
+| Everything worked yesterday                     | The tunnel is cleared on disconnect. Re-run `tools/phone-connect.sh`.                                                      |
+| No `Pair device with pairing code` anywhere     | You are on the Developer options list. Tap the label to open the Wireless debugging screen.                       |
+| No Developer options in Settings                | Build number was not tapped seven times, or it is under About phone → Version on this build.                               |
+| Cannot find Developer options after enabling it | Search `wireless debugging` in the Settings search box.                                   |

@@ -27,7 +27,8 @@ worry that the settings exist but do nothing on OxygenOS 16.
 **Alarms always fire.** 100% in both runs, including the crippled one. Alarms
 are the one mechanism OxygenOS leaves alone, so they are the only reliable way
 to watch a recorder that may have been frozen. This is why the watchdog is
-built on `AlarmManager` and not on a timer inside the app.
+built on `AlarmManager`. A timer inside the app is subject to the same
+freezing.
 
 There is also a hint about the failure mode. Alarms can only fire into a live
 process, so the app was being frozen and not killed. A frozen app thaws and

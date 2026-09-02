@@ -12,12 +12,12 @@
 
 
 Before any of the rest of this project is worth building, one question has to be
-answered on **your** phone, not on a phone in general: can a Flutter app keep a
+answered on **your** phone: can a Flutter app keep a
 location stream alive for an hour with the screen off?
 
 If yes, Phase 1 is written in Dart. If no, the recording loop moves into a native
 Kotlin foreground service and Flutter becomes the UI over the same database.
-Either way we find out now, not in week six with a half-built app.
+Either way we find out now, well before there is a half-built app.
 
 Everything in `app/` is disposable except this answer.
 
@@ -64,7 +64,7 @@ so:
 |---|---|---|
 | Location access | **While using the app** first | Android won't offer "always" until the app has asked once |
 | Notifications | Allow | A foreground service with no visible notification is one Android feels entitled to kill |
-| "Allow all the time" | Allow | Often opens Settings rather than showing a dialog — go to Permissions → Location → Allow all the time |
+| "Allow all the time" | Allow | Often opens Settings in place of a dialog — go to Permissions → Location → Allow all the time |
 | Battery optimisation | Allow | This is the Doze exemption; without it Android throttles you to a handful of fixes an hour |
 
 The four chips under the stats should all be green before you start a real test.
@@ -109,11 +109,11 @@ action on a OnePlus and it persists — you only do it once.
 **The setting does not stay put.** OnePlus is documented as randomly reverting
 the battery-optimisation exemption for arbitrary apps, days later, with no
 notice. That is why the app shows permission chips on its main screen: check
-that `no-doze` is still green **before every run**, not just once during setup.
+that `no-doze` is still green **before every run**.
 The recents lock is reported to reduce these reversions, which is the other
 reason to do it.
 
-This is a fight with the OS, not a bug in our code. Budget for the gate failing
+This is a fight with the OS. Budget for the gate failing
 on this phone and needing a second pass with these settings corrected before you
 conclude anything about Flutter.
 
@@ -124,7 +124,7 @@ runs the same trio our recorder depends on — a foreground service with a wake
 lock, repeating work on a thread executor, and `AlarmManager` alarms scheduled
 with `setExactAndAllowWhileIdle` — and reports executed-vs-expected as a
 percentage. It gives a verdict about the *device*, independent of our code, so a
-Phase 0 failure can be attributed rather than guessed at.
+Phase 0 failure can be attributed.
 
 Run it **three times**:
 
@@ -134,7 +134,7 @@ Run it **three times**:
 3. **A few days later, changing nothing.** This directly tests the documented
    claim that OnePlus silently reverts the exemption. If run 3 is worse than run
    2, the reversion is real on your device, and Phase 1 must treat the grant as
-   untrustworthy rather than checked-once.
+   untrustworthy on every run.
 
 Conditions that decide whether the number means anything:
 
@@ -158,8 +158,7 @@ single time**, while in-process work ran only 27 % of the time. Alarms firing
 means the process was still alive — so OxygenOS is *freezing* the app, not
 killing it. That is a materially better failure mode than a kill, and it is the
 one our dual-clock log can identify: a frozen process that thaws receives its
-buffered fixes in a burst, which the analyser reports as `buffered` rather than
-`lost`.
+buffered fixes in a burst, which the analyser reports as `buffered`.
 
 It also means an `AlarmManager` watchdog is viable on this device. 100 % is as
 strong a signal as this benchmark can give.
@@ -171,14 +170,14 @@ question.
 The residual 27 % is not uniform: the chart shows one contiguous suppressed
 window with dense execution either side, which is the signature of entering Doze
 and then coming back out. That distinction matters, because contiguous
-suppression is what produces a *gap* in a track rather than a thinner sampling
-rate.
+suppression is what produces a *gap* in a track. Uniform thinning would only
+lower the sampling rate.
 
 It is also probably not our failure mode. Doze requires the device to be
 **stationary**, and this benchmark was run on a phone sitting still. During an
 actual run the phone is moving, so the deepest states should not engage at all.
 Expect the real recording test to land better than 73 % — and treat that as a
-hypothesis Phase 0 tests, not a conclusion.
+hypothesis for Phase 0 to test.
 
 **Reading it against our actual use case:** a stationary overnight test is
 *harsher* than a run. Doze needs the device to be still, so during an actual run
@@ -219,14 +218,13 @@ the finding, and it points straight at the Kotlin service.
 on every fix, so the analyser computes the drain rate itself — you don't need to
 note anything. The bar is **under 8 %/hour** at 1 Hz. Much above that and you are
 probably holding a wake lock or the screen on. Under 15 minutes of data, the
-analyser refuses to judge rather than extrapolating from noise.
+analyser refuses to judge, since extrapolating from noise means nothing.
 
 ## 5. Reading the result
 
 The analyser prints a verdict, but the numbers behind it are what to look at:
 
-- **yield** — fixes received against fixes expected at 1 Hz. A diagnostic, not a
-  criterion.
+- **yield** — fixes received against fixes expected at 1 Hz. A diagnostic.
 - **max gap** — the longest silence. Must be under 30s, and nothing over 120s.
   A 15-minute gap is Doze.
 - **lost vs buffered** — for each big gap, whether GPS timestamps advanced as

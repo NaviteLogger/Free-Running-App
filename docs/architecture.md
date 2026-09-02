@@ -51,7 +51,7 @@ they were captured.
 `fixes` holds every position the platform hands over, including bad ones. The
 key is `(session_id, seq)`. A timestamp will not do, since two fixes can land
 in the same millisecond. `seq` is read back from the database when a session
-resumes, so recovered runs append instead of overwriting their own history.
+resumes, so recovered runs append to their own history.
 
 Bad fixes are kept on purpose. Dropping a 90-metre fix at write time would bake
 today's accuracy threshold into the archive forever. The threshold belongs in
@@ -75,9 +75,8 @@ times stay evenly spaced. That difference separates "delivered late" from
 
 WAL, `synchronous=NORMAL`, one insert per fix, no batching.
 
-Batching would be faster and would lose everything since the last commit when
-the app is killed. The point of the design is that a kill costs one fix at
-most. WAL means a committed row is already on disk. `synchronous=NORMAL` skips
+Batching would be faster, at the cost of everything since the last commit when
+the app is killed. The design holds a kill to one lost fix. WAL means a committed row is already on disk. `synchronous=NORMAL` skips
 one disk flush per commit; a killed process is still safe, and only a crashed
 operating system or a flat battery can lose recent writes.
 

@@ -76,16 +76,16 @@ Processing rules that are checked by tests:
 Phone upload queue:
 
 - A finished run is sent, then marked uploaded only after the server confirms.
-- A temporary failure keeps the run queued and stops after the first one,
-  instead of retrying twenty runs against a network that is down.
+- A temporary failure keeps the run queued and stops after the first one. A
+  network that is down will refuse the other nineteen the same way.
 - A rejected run is reported and not retried forever.
 - The payload field names are asserted against the server's schema, so renaming
-  a field breaks a test instead of failing on a phone.
+  a field breaks a test at build time.
 - GPX exports are read back by @tmcw/togeojson, a parser we did not write.
 - Importing the same GPX file twice makes one activity, because the id comes
   from the bytes of the file.
 
-Server behaviour checked against a real listening server, not mocks:
+Server behaviour, checked against a real listening server:
 
 - A missing token, a wrong token of the same length, and a wrong token of a
   different length all give 401. The right one gives 200.
@@ -104,7 +104,7 @@ heatmap.
 
 ### Phase 4 — whatever is missing after a month of use
 
-Deliberately empty until the app has been used for a month.
+Empty on purpose until the app has been used for a month.
 
 ## Test recordings still needed
 
