@@ -34,12 +34,16 @@ dist/
 *.db
 *.db-wal
 *.db-shm
-data/
-raw-points/
+# Anchored with a leading slash. An unanchored "data/" also matched
+# app/lib/data/, which silently excluded the schema, the models and the
+# repository from git.
+/data/
+/server/data/
+/raw-points/
 *.gpx
-# Phase 0 fix logs are raw location history — same rule as everything above.
+# Fix logs are raw location history, same rule as everything above.
 *.jsonl
-logs/
+/logs/
 
 # ---- Editor / OS ----
 .idea/

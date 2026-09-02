@@ -93,6 +93,25 @@ console.log(
 if (fixes.some((f) => f.mocked))
   console.log(`  WARNING      some fixes came from a mock provider`);
 
+// Drain is measured from the first and last fix that carried a battery level,
+// not from the session bounds, so a log recorded before battery logging existed
+// simply reports nothing rather than dividing by a missing number.
+const battery = (() => {
+  const withLevel = fixes.filter((f) => typeof f.batt === "number");
+  if (withLevel.length < 2) return null;
+  const from = withLevel[0];
+  const to = withLevel[withLevel.length - 1];
+  const hours = (to.ts - from.ts) / 3_600_000;
+  if (hours <= 0) return null;
+  return { from: from.batt, to: to.batt, hours, rate: (from.batt - to.batt) / hours };
+})();
+
+if (battery !== null) {
+  console.log(
+    `  battery      ${battery.from}% → ${battery.to}% over ${fmtDur(battery.hours * 3_600_000)} = ${battery.rate.toFixed(1)}%/h`,
+  );
+}
+
 const worst = [...gaps]
   .sort((a, b) => b.ms - a.ms)
   .slice(0, 10)
@@ -125,8 +144,72 @@ if (start?.grants) {
   }
 }
 
-const verdict =
-  Number(yieldPct) >= 90 && sorted[sorted.length - 1] < 15000
-    ? "PASS — the Dart-side loop held up. Phase 1 can stay in Flutter."
-    : "FAIL — move capture into a native Kotlin foreground service.";
-console.log(`\n  ${verdict}\n`);
+// The gate, verbatim from the build plan. Yield and the percentiles above are
+// diagnostics; only these decide whether Phase 1 gets written in Dart.
+const TARGET_GAP_MS = 30_000;
+const HARD_GAP_MS = 120_000;
+const MAX_LOST_FIXES = 1;
+const MAX_DRAIN_PCT_PER_H = 8;
+
+const maxGapMs = sorted[sorted.length - 1];
+const overHard = gaps.filter((g) => g.ms > HARD_GAP_MS).length;
+
+const results = [
+  {
+    name: "gap discipline",
+    pass: maxGapMs <= TARGET_GAP_MS && overHard === 0,
+    detail: `max ${(maxGapMs / 1000).toFixed(1)}s (limit ${TARGET_GAP_MS / 1000}s), ${overHard} over ${HARD_GAP_MS / 1000}s`,
+  },
+  {
+    // Fixes are flushed to disk individually, so a force-stop can only ever
+    // truncate the write in flight. More than one lost line means something is
+    // buffering that should not be.
+    name: "kill resilience",
+    pass: malformed <= MAX_LOST_FIXES,
+    detail: `${malformed} truncated line(s) (limit ${MAX_LOST_FIXES})`,
+  },
+];
+
+if (battery === null) {
+  results.push({
+    name: "battery",
+    pass: null,
+    detail: "not recorded in this log",
+  });
+} else if (battery.hours < 0.25) {
+  // A 4% reading over six minutes extrapolates to 40%/h and means nothing.
+  results.push({
+    name: "battery",
+    pass: null,
+    detail: `only ${fmtDur(battery.hours * 3_600_000)} of data — run longer`,
+  });
+} else {
+  results.push({
+    name: "battery",
+    pass: battery.rate < MAX_DRAIN_PCT_PER_H,
+    detail: `${battery.rate.toFixed(1)}%/h (limit ${MAX_DRAIN_PCT_PER_H}%/h)`,
+  });
+}
+
+results.push({
+  name: "interruption",
+  pass: null,
+  detail: "judge by hand: phone call, camera, Doze",
+});
+
+console.log(`\n  gate\n`);
+for (const r of results) {
+  const mark = r.pass === null ? "?" : r.pass ? "✓" : "✗";
+  console.log(`    ${mark} ${r.name.padEnd(16)} ${r.detail}`);
+}
+
+const failed = results.filter((r) => r.pass === false);
+const unjudged = results.filter((r) => r.pass === null);
+console.log(
+  failed.length > 0
+    ? `\n  FAIL — ${failed.length} criterion/criteria failed: ${failed.map((r) => r.name).join(", ")}.\n` +
+        `  If only kill resilience failed, move capture into a native Kotlin\n` +
+        `  foreground service. If gaps failed, suspect Doze and OEM killers first.\n`
+    : `\n  PASS on everything measurable here${unjudged.length ? `, ${unjudged.length} left to judge by hand` : ""}.\n` +
+        `  The Dart-side loop held up — Phase 1 can stay in Flutter.\n`,
+);

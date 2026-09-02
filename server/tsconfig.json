@@ -2,8 +2,9 @@
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
     "types": ["node"],
-    "rootDir": "src",
+    // No rootDir: nothing is emitted, and it would otherwise refuse to look at
+    // anything outside src/, including the tests.
     "tsBuildInfoFile": "node_modules/.cache/tsc/server.tsbuildinfo"
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts", "test/**/*.ts"]
 }

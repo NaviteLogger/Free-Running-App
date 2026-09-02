@@ -35,14 +35,18 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   geolocator: ^14.0.3
-  path_provider: ^2.1.6
   # Pinned below 13. permission_handler_android 14.x hardcodes compileSdk 37,
   # but the SDK now ships that platform as "android-37.0" and AGP resolves it
   # by the hash string "android-37", which no longer exists as a package.
   # 13.x compiles against 35 and works. Revisit when AGP handles minor-version
   # platforms.
   permission_handler: ^12.0.0
-  share_plus: ^13.3.0
+  battery_plus: ^7.1.1
+  sqflite: ^2.4.3
+  path: ^1.9.1
+  uuid: ^4.6.0
+  device_info_plus: ^13.2.0
+  package_info_plus: ^10.2.1
 
 dev_dependencies:
   flutter_test:
@@ -54,6 +58,7 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  sqflite_common_ffi: ^2.4.2+1
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

@@ -6,15 +6,22 @@
     "typecheck:watch": "tsc --watch",
     "dev": "node --watch src/main.ts",
     "start": "node src/main.ts",
-    "typecheck:config": "tsc -p tripwire >/dev/null 2>&1 && { echo \"FAIL: tripwire compiled clean - the strict config regressed\"; exit 1; } || echo \"OK: config still rejects every tripwire violation\""
+    "typecheck:config": "tsc -p tripwire >/dev/null 2>&1 && { echo \"FAIL: tripwire compiled clean - the strict config regressed\"; exit 1; } || echo \"OK: config still rejects every tripwire violation\"",
+    "test": "node --test \"test/**/*.test.ts\"",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "type": "module",
   "devDependencies": {
     "@types/node": "^24.13.3",
+    "prettier": "^3.9.6",
     "typescript": "^7.0.2"
   },
   "private": true,
   "engines": {
     "node": ">=24"
+  },
+  "dependencies": {
+    "zod": "^4.5.4"
   }
 }

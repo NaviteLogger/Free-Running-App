@@ -1,4 +1,4 @@
-import { OnlyAType, realValue } from "./types.ts"; // verbatimModuleSyntax
+import { OnlyAType, realValue } from './types.ts'; // verbatimModuleSyntax
 
 export enum Colours {
   Red,
@@ -29,12 +29,12 @@ export function noReturn(flag: boolean): number {
 export function fallthrough(n: number): string {
   switch (n) {
     case 1: // noFallthroughCasesInSwitch
-      const x = "one";
+      const x = 'one';
       console.log(x);
     case 2:
-      return "two";
+      return 'two';
     default:
-      return "other";
+      return 'other';
   }
 }
 
@@ -49,7 +49,7 @@ export function unusedLocal(): void {
 
 export function unreachable(): number {
   return 1;
-  console.log("never"); // allowUnreachableCode: false
+  console.log('never'); // allowUnreachableCode: false
 }
 
 export function unusedLabel(): void {
@@ -60,14 +60,14 @@ export function unusedLabel(): void {
 
 class Base {
   greet(): string {
-    return "hi";
+    return 'hi';
   }
 }
 export class Child extends Base {
   greet(): string {
-    return "yo";
+    return 'yo';
   } // noImplicitOverride
 }
 
-export const t: OnlyAType = { id: "x" };
+export const t: OnlyAType = { id: 'x' };
 export const v = realValue;
