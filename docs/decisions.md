@@ -117,8 +117,8 @@ when you open it, and the phone keeps its uploads queued.
 ## Tooling
 
 **Everything runs in CI on every push.** Formatting, type checking and tests
-for both packages, plus a debug APK build. A check that only runs when somebody
-remembers is not a check.
+for both packages, plus a debug APK build. A check only counts if it runs
+without anybody remembering to run it.
 
 **Formatters decide layout.** `dart format` and Prettier, both enforced in CI.
 No arguments about indentation.

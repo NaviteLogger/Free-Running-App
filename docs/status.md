@@ -9,7 +9,7 @@ The next real step is installing the app and recording a walk.
 
 ## Phases
 
-### Phase 0 — measure the phone · done, with a gap
+### Phase 0 · measure the phone · done, with a gap
 
 | Item | State |
 |---|---|
@@ -25,7 +25,7 @@ Dart recording loop has never been tested against a real walk.
 `tools/analyze-log.mjs` reads the file format the old experiment produced.
 Nothing produces that format now. See Open problems.
 
-### Phase 1 — the recorder · running on the phone
+### Phase 1 · the recorder · running on the phone
 
 | Item | State |
 |---|---|
@@ -39,7 +39,7 @@ Nothing produces that format now. See Open problems.
 | Recording accuracy against a known route | **Not yet** |
 | 45-minute walk with the screen off | **Not yet** |
 
-### Phase 2 — sync and the server · started
+### Phase 2 · sync and the server · started
 
 | Item | State |
 |---|---|
@@ -99,12 +99,12 @@ Server behaviour, checked against a real listening server:
 - The rate limiter allows a burst, refills over time, counts each address
   separately, and leaves other routes alone.
 
-### Phase 3 — web UI · not started
+### Phase 3 · web UI · not started
 
 Activity list, activity detail with a map, weekly and monthly totals, calendar
 heatmap.
 
-### Phase 4 — whatever is missing after a month of use
+### Phase 4 · whatever is missing after a month of use
 
 Empty on purpose until the app has been used for a month.
 
@@ -135,16 +135,16 @@ lost 15 seconds to the operating system. Inaccurate fixes are now kept for
 timing and excluded only from distance. Same bug as the standstill one: a
 filter that deletes points destroys the evidence of when they arrived.
 
-**The phone delivers a fix every 7 seconds, not every second.** The recorder
-asks for 1 Hz with no distance filter, and the platform gave 7.1 s intervals,
-very consistently, on a stationary phone indoors. Everything written so far
+**The phone delivers a position every 7 seconds.** The recorder asks for one
+per second with no distance filter. Android gave 7.1 second intervals, very
+consistently, on a phone sitting still indoors. Everything written so far
 assumes 1 Hz: the yield metric, the gap thresholds, the analyser. Whether this
 is the fused provider throttling a phone that is not moving, or OxygenOS, is
 not yet known. Measure it again while actually moving before changing any
 thresholds.
 
-Install times over wireless adb, worth knowing: debug 182 MB took 13m50s,
-release 48 MB, and `--split-per-abi` arm64 17 MB took 25 seconds.
+Install times over wireless adb: the 182 MB debug build took 13m50s, and the
+17 MB arm64 release build from `--split-per-abi` took 25 seconds.
 
 ## Open problems
 
@@ -152,18 +152,15 @@ release 48 MB, and `--split-per-abi` arm64 17 MB took 25 seconds.
    from the Phase 0 experiment. The Phase 1 database holds everything that log
    held and more, so the tool can be pointed at a copy of the database pulled
    off the phone with `adb`. Not done.
-2. **`docs/phase-0.md` describes an app that no longer exists.** The device
-   settings and the benchmark numbers in it are still correct and still matter.
-   The instructions for the app are out of date.
-3. **Drift is still open.** sqflite works and has tests. Drift would add typed
+2. **Drift is still open.** sqflite works and has tests. Drift would add typed
    queries and a code generation step. Not urgent; the query count is small.
-4. **The `Recorder` class has no tests.** The database, the schema and the
+3. **The `Recorder` class has no tests.** The database, the schema and the
    distance maths are covered. The recording loop itself is not, because it
    needs the location plugin faked.
-5. **The watchdog notices but cannot restart.** It raises a notification and
+4. **The watchdog can tell you recording stopped, and cannot start it again.** It raises a notification and
    the app offers to resume. Restarting on its own needs the recording loop
    moved into a native Android service.
-6. **The screen rebuilds twice a second.** Once from a clock timer, once from
+5. **The screen rebuilds twice a second.** Once from a clock timer, once from
    the recorder. Nothing drops frames at this size, and it will matter when the
    screen has a map on it.
 

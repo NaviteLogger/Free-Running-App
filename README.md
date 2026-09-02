@@ -1,74 +1,119 @@
 # free-running
 
-A running tracker you host yourself. One user, one phone, one small server.
+A running tracker you host yourself.
 
-Records a run on an Android phone, uploads the raw GPS points, and does all the
-processing on the server so past runs improve when the processing improves.
+Your phone records a run and sends the raw GPS points to a small server you
+own. The server works out distance, climb, pace and splits, and a web page
+shows them back to you. One person, one phone, one machine.
 
-## Layout
+Location history is the most personal data most people carry. It is your home
+address, your workplace and your daily routine. This keeps all of it on
+hardware you control.
 
-| Directory | What it is |
-|---|---|
-| `app/` | Flutter app for Android. Records runs to on-device SQLite. |
-| `server/` | Node 24 + TypeScript 7. Not started yet. |
-| `web/` | Browser UI. Not started yet. |
-| `docs/` | Design notes, decisions, and the project status. |
-| `tools/` | Scripts that are not part of the app or the server. |
+## What it does
+
+- Records a run on Android, writing every position straight to the phone's own
+  database
+- Survives being killed mid-run and offers to carry on where it stopped
+- Uploads finished runs when there is a network, and holds on to them when
+  there isn't
+- Works out distance, moving time, climb and kilometre splits on the server
+- Imports and exports GPX, so your history from elsewhere comes with you and
+  yours can leave whenever you like
+
+## What it will never do
+
+Accounts, following people, sharing, leaderboards, segments, kudos. One person
+uses this. Adding any of that would mean building the thing it exists to
+replace.
 
 ## Where the project is
 
-See [docs/status.md](docs/status.md). Short version: the recorder works and is
-tested on a desktop, and has never run on a phone.
+The recorder works and has run on a phone. The server accepts uploads and
+serves activities back. The web page has not been written yet.
 
-## Running the app
+Full detail in [docs/status.md](docs/status.md).
 
-The dev container has the Android SDK and Flutter, and no USB. Full steps are in
-[docs/connecting.md](docs/connecting.md); the short version:
+## What you need
 
-Angle brackets are values read off the phone. It shows two different addresses:
-the pairing dialog has its own port, the main Wireless debugging screen has
-another.
-
-```bash
-# once per phone, all three values from the pairing dialog
-adb pair <IP>:<PAIRING_PORT> <SIX_DIGIT_CODE>
-
-# every session, the address on the main Wireless debugging screen
-tools/phone-connect.sh <IP>:<PORT>
-
-cd app && flutter run
-```
-
-The phone cannot reach the container by address, because the container is on a
-Docker bridge behind WSL2's NAT. `adb reverse` tunnels back along the connection
-that already exists, so the app points at `http://localhost:8080` and no ports
-are opened anywhere.
-
-```bash
-cd app
-flutter analyze
-flutter test
-flutter build apk --debug
-```
-
-The tests use SQLite on the host, so they check the real schema and the real
-queries without a phone.
+- An Android phone, version 11 or later
+- Flutter, to build the app
+- Node 24 or later, for the server
+- Somewhere to run the server. A small virtual machine is plenty.
 
 ## Running the server
 
-Node 24 runs TypeScript with no build step. `tsc` only type-checks.
+Node 24 runs TypeScript directly, so there is no build step. `tsc` is there to
+check types.
 
 ```bash
 cd server
-npm run typecheck
+npm install
 npm start
 ```
 
-## Documents
+The first start prints an API token. Copy it somewhere safe, since it is shown
+only once. To issue a new one, delete the `api_token` row from the `settings`
+table and restart.
 
-- [docs/status.md](docs/status.md) — what is done and what is next
-- [docs/connecting.md](docs/connecting.md) — getting the phone talking to the server
-- [docs/architecture.md](docs/architecture.md) — how the pieces fit
-- [docs/decisions.md](docs/decisions.md) — choices that are settled, and why
-- [docs/android-background.md](docs/android-background.md) — the OS fights back
-- [docs/phase-0.md](docs/phase-0.md) — the original recording experiment
+```bash
+npm run typecheck
+npm test
+```
+
+## Running the app
+
+```bash
+cd app
+flutter pub get
+flutter run
+```
+
+Then open the settings screen in the app and enter the server address and the
+token.
+
+Getting a phone connected to a development machine takes a few steps, and they
+are all in [docs/connecting.md](docs/connecting.md).
+
+```bash
+flutter analyze
+flutter test
+```
+
+The tests run against real SQLite on your computer, so they exercise the actual
+schema and queries with no phone attached.
+
+## How it is put together
+
+The phone sends raw GPS points and nothing else. Every number you see is worked
+out on the server.
+
+This costs a little effort up front and buys something valuable. When the way
+climb is smoothed improves next year, every run you have ever recorded can be
+worked out again with the better version. Had the phone done the sums, those
+numbers would be stuck at whatever the app believed on the day.
+
+[docs/architecture.md](docs/architecture.md) has the rest.
+
+## A warning about Android
+
+Keeping an app alive with the screen off is the hardest part of building this,
+and it has little to do with your code. Android limits background work, and
+phone makers add their own limits on top that are stricter and barely
+documented. Strava has the same problem and answers it with a support article
+per manufacturer.
+
+[docs/android-background.md](docs/android-background.md) covers what helps,
+with measurements from a OnePlus 12.
+
+## Documentation
+
+- [docs/status.md](docs/status.md) · what is done, what is next, what is broken
+- [docs/connecting.md](docs/connecting.md) · getting a phone talking to a
+  development server
+- [docs/architecture.md](docs/architecture.md) · how the pieces fit together
+- [docs/decisions.md](docs/decisions.md) · settled choices and the reasoning
+- [docs/android-background.md](docs/android-background.md) · staying alive in
+  the background
+- [docs/testing-the-recorder.md](docs/testing-the-recorder.md) · the four tests
+  that need a real walk
