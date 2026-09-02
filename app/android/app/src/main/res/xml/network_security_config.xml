@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!--
+      Plain HTTP is permitted to the phone's own loopback and nowhere else.
+
+      That is where `adb reverse tcp:8080 tcp:8080` puts the development
+      server: the phone connects to its own localhost and adb tunnels it back
+      to the machine running the server. No LAN address, no port forwarding
+      through WSL and Docker, and nothing listening on the network.
+
+      Everything else stays HTTPS-only, which is the rule for the real server.
+      A misconfigured address cannot quietly send location history in the clear.
+    -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">localhost</domain>
+        <domain includeSubdomains="false">127.0.0.1</domain>
+    </domain-config>
+
+    <base-config cleartextTrafficPermitted="false" />
+</network-security-config>
