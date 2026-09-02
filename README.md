@@ -26,9 +26,12 @@ The dev container has the Android SDK and Flutter, and no USB. Full steps are in
 [docs/connecting.md](docs/connecting.md); the short version:
 
 ```bash
-adb pair 192.168.1.x:PORT      # port from the pairing dialog
-adb connect 192.168.1.x:5555   # port from the main wireless debugging screen
-adb reverse tcp:8080 tcp:8080  # phone's localhost:8080 becomes this container
+# once per phone, using the address and code from the pairing dialog
+adb pair 192.168.1.42:37831 123456
+
+# every session, using the address on the main wireless debugging screen
+tools/phone-connect.sh 192.168.1.42:5555
+
 cd app && flutter run
 ```
 
