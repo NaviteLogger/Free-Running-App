@@ -75,13 +75,18 @@ token.
 Getting a phone connected to a development machine takes a few steps, and they
 are all in [docs/connecting.md](docs/connecting.md).
 
-```bash
-flutter analyze
-flutter test
-```
-
 The tests run against real SQLite on your computer, so they exercise the actual
 schema and queries with no phone attached.
+
+## Checking everything
+
+```sh
+tools/verify.sh
+```
+
+Formatting, types and tests for both halves. It runs each check unpiped and
+exits non-zero if any of them fail, so it works in a script or a hook. The same
+checks run in CI on every push.
 
 ## How it is put together
 
