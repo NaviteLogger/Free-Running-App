@@ -4,7 +4,7 @@
 # server. Run this after a reboot, after the container restarts, or any time
 # `adb devices` comes up empty.
 #
-#   tools/phone-connect.sh 192.168.1.42:5555
+#   tools/phone-connect.sh <IP>:<PORT>
 #
 # The address is on the phone under Settings -> System -> Developer options ->
 # Wireless debugging, on the main screen. It is NOT the one in the pairing
@@ -27,15 +27,33 @@ if ! [[ "$TARGET" =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}:[0-9]{1,5}$ ]]; then
   exit 64
 fi
 
+HOST="${TARGET%%:*}"
+PHONE_PORT="${TARGET##*:}"
+
+# adb's own message for an address that is not answering is "protocol fault
+# (couldn't read status message): Success", which describes nothing. Checking
+# the socket first means the failure says what is actually wrong.
+echo "0/3  checking $HOST:$PHONE_PORT is reachable"
+if ! timeout 5 bash -c "exec 3<>/dev/tcp/$HOST/$PHONE_PORT" 2>/dev/null; then
+  echo >&2
+  echo "Nothing is listening on $HOST:$PHONE_PORT." >&2
+  echo >&2
+  echo "Check that:" >&2
+  echo "  - this is a real address off your phone, not an example from the docs" >&2
+  echo "  - it is the IP and port on the main Wireless debugging screen," >&2
+  echo "    not the one in the pairing dialog, which is a different port" >&2
+  echo "  - Wireless debugging is still switched on (it turns itself off" >&2
+  echo "    when the phone leaves the network, and after a reboot)" >&2
+  echo "  - the phone is on the same wifi as this machine" >&2
+  exit 1
+fi
+
 echo "1/3  connecting to $TARGET"
-# adb connect has no timeout of its own and will sit there for a long time
-# against an address that is not answering.
 if ! timeout 15 adb connect "$TARGET" | tee /dev/stderr | grep -qE 'connected to|already connected'; then
   echo >&2
-  echo "Could not connect. Usually one of:" >&2
-  echo "  - Wireless debugging was switched off, or the phone rebooted" >&2
-  echo "  - the phone is on a different network" >&2
-  echo "  - this phone has never been paired: see docs/connecting.md step 2" >&2
+  echo "The port answered but adb could not talk to it. Usually one of:" >&2
+  echo "  - this phone has never been paired: see docs/connecting.md" >&2
+  echo "  - this is the pairing port, which only 'adb pair' can use" >&2
   exit 1
 fi
 

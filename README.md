@@ -25,12 +25,16 @@ tested on a desktop, and has never run on a phone.
 The dev container has the Android SDK and Flutter, and no USB. Full steps are in
 [docs/connecting.md](docs/connecting.md); the short version:
 
-```bash
-# once per phone, using the address and code from the pairing dialog
-adb pair 192.168.1.42:37831 123456
+Angle brackets are values read off the phone. It shows two different addresses:
+the pairing dialog has its own port, the main Wireless debugging screen has
+another.
 
-# every session, using the address on the main wireless debugging screen
-tools/phone-connect.sh 192.168.1.42:5555
+```bash
+# once per phone, all three values from the pairing dialog
+adb pair <IP>:<PAIRING_PORT> <SIX_DIGIT_CODE>
+
+# every session, the address on the main Wireless debugging screen
+tools/phone-connect.sh <IP>:<PORT>
 
 cd app && flutter run
 ```

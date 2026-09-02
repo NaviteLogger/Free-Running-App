@@ -1,7 +1,15 @@
 # Connecting the phone
 
-Every command below is meant to be copied as written. The only things you
-substitute are the two addresses the phone shows you, and both are marked.
+Anything in ANGLE BRACKETS is a value you read off your phone. Replace it,
+brackets and all. Copying the examples as written gives you
+
+    error: protocol fault (couldn't read status message): Success
+
+which is adb's way of saying nothing answered at that address.
+
+The phone shows you **two different addresses** and it is easy to use the wrong
+one. The pairing dialog has its own port, used once by `adb pair`. The main
+Wireless debugging screen has a different port, used by everything else.
 
 ---
 
@@ -25,13 +33,27 @@ six-digit code. It expires after a minute or two, so have the terminal ready.
 In the container, using the address **and the code from the pairing dialog**:
 
 ```bash
-adb pair 192.168.1.42:37831 123456
+adb pair <IP>:<PAIRING_PORT> <SIX_DIGIT_CODE>
+```
+
+All three come from the pairing dialog, which shows something like:
+
+```
+Pair with device
+  Wi-Fi pairing code:  418362
+  IP address & Port:   192.168.0.183:41234
+```
+
+so that dialog would mean:
+
+```bash
+adb pair 192.168.0.183:41234 418362
 ```
 
 Expected:
 
 ```
-Successfully paired to 192.168.1.42:37831 [guid=adb-...]
+Successfully paired to 192.168.0.183:41234 [guid=adb-...]
 ```
 
 Close the dialog. You never need it again unless you reset the phone.
@@ -48,29 +70,34 @@ The connection and the tunnel are both cleared when the phone disconnects, the
 phone reboots, or the container restarts. One command does both:
 
 ```bash
-tools/phone-connect.sh 192.168.1.42:5555
+tools/phone-connect.sh <IP>:<PORT>
 ```
 
-The address here is from the **main Wireless debugging screen**, not the
-pairing dialog.
+This address is on the **main Wireless debugging screen**, under the device
+name, shown as `IP address & Port`. The port is a different number from the
+pairing one.
 
 Expected:
 
 ```
-1/3  connecting to 192.168.1.42:5555
-connected to 192.168.1.42:5555
+0/3  checking 192.168.0.183:37129 is reachable
+1/3  connecting to 192.168.0.183:37129
+connected to 192.168.0.183:37129
 2/3  waiting for the device to be ready
 3/3  tunnelling phone localhost:8080 to this container
 List of devices attached
-192.168.1.42:5555	device
+192.168.0.183:37129	device
 reverse tunnels:
-192.168.1.42:5555 tcp:8080 tcp:8080
+192.168.0.183:37129 tcp:8080 tcp:8080
 ```
+
+The script checks the address answers before handing it to adb, so a wrong one
+says so plainly instead of producing a protocol fault.
 
 If you would rather run the two commands yourself:
 
 ```bash
-adb connect 192.168.1.42:5555
+adb connect <IP>:<PORT>
 adb reverse tcp:8080 tcp:8080
 ```
 
@@ -219,4 +246,5 @@ process is never directly exposed. Set `HOST` to change that.
 | Uploads give 401 | Wrong token. Read it back with the command above. |
 | `CLEARTEXT communication not permitted` | The address is `http://` and not localhost. Use `https://`. |
 | Pairing code refused | The dialog expired. Open it again for a fresh code and port. |
+| `protocol fault (couldn't read status message)` | Nothing answered at that address. Almost always a copied example, or the pairing port used where the connect port belongs. |
 | Everything worked yesterday | The tunnel is cleared on disconnect. Re-run `tools/phone-connect.sh`. |

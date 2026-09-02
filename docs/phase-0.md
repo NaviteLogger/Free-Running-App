@@ -38,21 +38,8 @@ devices must be on the same network.
 
 **In this container:**
 
-```bash
-adb pair 192.168.1.42:37831     # the IP:port from the pairing dialog
-# paste the six-digit code when prompted
-```
-
-Then connect using the port on the *main* Wireless debugging screen, which is a
-**different port** from the pairing one — this trips up nearly everyone:
-
-```bash
-adb connect 192.168.1.42:5555
-adb devices                      # should list one device
-```
-
-The pairing survives reboots; the connection does not. After a reboot, or after
-the container restarts, just re-run `adb connect`.
+See [connecting.md](connecting.md), which has the current steps with exact
+commands and the values to read off the phone.
 
 ## 2. Install and run
 
