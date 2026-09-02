@@ -25,7 +25,7 @@ Dart recording loop has never been tested against a real walk.
 `tools/analyze-log.mjs` reads the file format the old experiment produced.
 Nothing produces that format now. See Open problems.
 
-### Phase 1 — the recorder · code complete, untested on hardware
+### Phase 1 — the recorder · running on the phone
 
 | Item | State |
 |---|---|
@@ -34,8 +34,10 @@ Nothing produces that format now. See Open problems.
 | Start, pause, stop, distance readout | Done |
 | Refuses to start without the battery exemption | Done |
 | Alarm watchdog that notices a dead recorder | Done, native Kotlin |
-| Runs on a phone | **Not yet** |
+| Runs on a phone | Done, 2 September |
+| Records, stops and uploads end to end | Done |
 | Recording accuracy against a known route | **Not yet** |
+| 45-minute walk with the screen off | **Not yet** |
 
 ### Phase 2 — sync and the server · started
 
@@ -115,6 +117,34 @@ to collect. Record them while using the app in Phase 1.
 - [ ] A hill with a known height. Should land within 15%.
 - [ ] Twelve laps of a 400 m track. Should land within 1% of 4,800 m.
 - [ ] A run with a deliberate 60-second stop and a 5-second pause at a light.
+
+## Found on the phone, 2 September
+
+First run on the OnePlus 12. The whole path works: record, stop, upload, list,
+GPX. Three things came out of it.
+
+**The release build had no internet access.** Flutter injects the INTERNET
+permission into debug and profile manifests and never into release, so the app
+worked all through development and could not reach the network the moment it
+was built for release. Now declared in `src/main/AndroidManifest.xml`.
+
+**A rejected fix looked like data loss.** During GPS cold start one fix came in
+at 38 m accuracy. The pipeline dropped it, which left a 14-second hole between
+the fixes either side, and a phone sitting still indoors was reported as having
+lost 15 seconds to the operating system. Inaccurate fixes are now kept for
+timing and excluded only from distance. Same bug as the standstill one: a
+filter that deletes points destroys the evidence of when they arrived.
+
+**The phone delivers a fix every 7 seconds, not every second.** The recorder
+asks for 1 Hz with no distance filter, and the platform gave 7.1 s intervals,
+very consistently, on a stationary phone indoors. Everything written so far
+assumes 1 Hz: the yield metric, the gap thresholds, the analyser. Whether this
+is the fused provider throttling a phone that is not moving, or OxygenOS, is
+not yet known. Measure it again while actually moving before changing any
+thresholds.
+
+Install times over wireless adb, worth knowing: debug 182 MB took 13m50s,
+release 48 MB, and `--split-per-abi` arm64 17 MB took 25 seconds.
 
 ## Open problems
 

@@ -100,13 +100,26 @@ function usablePoints(all: readonly RawPoint[]): UsablePoint[] {
   let anchor: RawPoint | undefined;
 
   for (const point of sorted) {
-    if (point.accuracy !== null && point.accuracy > SETTINGS.accuracyGateM) continue;
     if (point.isMocked) continue;
 
     const prevGapS = previous === undefined ? 0 : (point.gpsTs - previous.gpsTs) / 1000;
 
     let stepM = 0;
     let moved = false;
+
+    // An inaccurate fix has an untrustworthy position and a perfectly good
+    // timestamp. It adds no distance and never becomes the anchor, and it stays
+    // in the list so the seconds around it are still accounted for.
+    //
+    // Removing it outright was a bug found on real data: during a GPS cold
+    // start one fix arrived at 38 m accuracy, dropping it left an apparent
+    // 14-second hole, and a phone sitting still indoors was reported as having
+    // lost time to the operating system.
+    if (point.accuracy !== null && point.accuracy > SETTINGS.accuracyGateM) {
+      kept.push({ ...point, prevGapS, stepM: 0, moved: false });
+      previous = point;
+      continue;
+    }
 
     if (anchor === undefined) {
       anchor = point;

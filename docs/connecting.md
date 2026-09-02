@@ -11,14 +11,15 @@ you, then says developer mode is on.
 
 ### Find Wireless debugging
 
-Settings → System & update → Developer Options
+On OxygenOS 16:
 
-### Find "Wireless debugging
+    Settings → System & update → Developer Options → Wireless debugging
 
-> Enable
-> Enter it:
+If a system update moves it, search `wireless debugging` in the Settings search
+box.
 
-That screen is where everything lives:
+Turn the toggle on, then **tap the label** to open the screen behind it. That
+screen holds everything you need:
 
 ```
 ← Wireless debugging                    [ON]
@@ -177,18 +178,46 @@ Expected: `{"ok":true,"activities":0}`
 
 ## Install and run the app
 
-In the first terminal:
+### Build a release APK for anything over wifi
+
+Sizes measured on this project:
+
+| Build | Size |
+|---|---|
+| `flutter build apk --debug` | 182 MB |
+| `flutter build apk --release` | 48 MB |
+
+Wireless adb here goes through a Docker bridge and WSL's NAT, and the debug APK
+is slow enough over that path to be impractical. Use release for anything you
+install over wifi:
+
+```bash
+cd /workspace/app
+flutter build apk --release
+adb install -r build/app/outputs/flutter-apk/app-release.apk
+```
+
+Release is also the honest build for a recording test. Debug carries extra
+runtime work that shows up in the battery figure.
+
+To make it smaller still, `--split-per-abi` builds one APK per architecture.
+This phone is `android-arm64`, so `app-arm64-v8a-release.apk` is the one to
+install.
+
+### Hot reload while developing
 
 ```bash
 cd /workspace/app
 flutter run
 ```
 
-It builds, installs and attaches. While attached, `r` hot-reloads a change in
-about a second, `R` restarts, `q` detaches.
+This builds a debug APK, installs it, and attaches. While attached, `r`
+hot-reloads a change in about a second, `R` restarts, `q` detaches. The first
+install is slow for the size reason above; later reloads are fast because only
+the changed Dart is sent.
 
-Detach before any recording test. A debugger holding the process open is
-exactly what the test is trying to measure.
+Detach before any recording test. A debugger holding the process open is exactly
+what the test is trying to measure.
 
 ---
 

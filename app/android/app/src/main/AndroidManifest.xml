@@ -9,6 +9,13 @@
          shown at the same time as the foreground grant. -->
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
 
+    <!-- Uploading runs to the server needs this.
+         Flutter injects INTERNET into the debug and profile manifests so hot
+         reload works, and never into release. Leaving it out here means the app
+         works all through development and silently cannot reach the network the
+         moment it is built for release. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <!-- Android 14+ requires the typed variant matching the service's
          foregroundServiceType, which geolocator_android declares as "location". -->

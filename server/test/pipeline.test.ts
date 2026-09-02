@@ -107,6 +107,28 @@ describe('distance', () => {
     assert.equal(processActivity(activity(points)).distanceM, 0);
   });
 
+  it('a rejected fix does not become a hole in the timeline', () => {
+    // Taken from a real recording: during a GPS cold start one fix arrived at
+    // 38 m accuracy. Dropping it entirely left a 14-second gap between the
+    // fixes either side, which the timing then blamed on the operating system.
+    const points: RawPoint[] = [];
+    for (let i = 0; i < 20; i++) {
+      points.push(
+        point(i, {
+          ts: START + i * 7000,
+          gpsTs: START + i * 7000,
+          lat: 52.2,
+          accuracy: i === 3 ? 38 : 6,
+        }),
+      );
+    }
+    const summary = processActivity(activity(points));
+    assert.equal(summary.droppedS, 0, `reported ${summary.droppedS}s lost`);
+    // The point is still counted as received, and still excluded from distance.
+    assert.equal(summary.pointCount, 20);
+    assert.equal(summary.distanceM, 0);
+  });
+
   it('ignores fixes outside the accuracy gate', () => {
     const points = [
       point(0, { lat: 52.2, accuracy: 5 }),

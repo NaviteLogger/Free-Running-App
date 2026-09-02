@@ -30,7 +30,7 @@ class FakeApi implements ApiClient {
   }
 
   @override
-  Future<bool> checkHealth() async => true;
+  Future<String?> checkHealth() async => null;
 
   @override
   void close() => closed++;
@@ -288,6 +288,23 @@ void main() {
       final api = FakeApi([]);
       await serviceWith(api).syncNow();
       expect(api.closed, 1);
+    });
+  });
+
+  group('health check', () {
+    test('reports the reason a server could not be reached', () async {
+      // Nothing is listening on this port, so the failure has to describe
+      // itself. An earlier version returned a bare false and the real cause
+      // was invisible.
+      final client = ApiClient(
+        baseUrl: 'http://127.0.0.1:1',
+        token: 'irrelevant',
+      );
+      final problem = await client.checkHealth();
+      client.close();
+
+      expect(problem, isNotNull);
+      expect(problem, contains('127.0.0.1:1'));
     });
   });
 

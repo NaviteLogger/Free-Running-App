@@ -66,13 +66,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       baseUrl: _url.text.trim().replaceAll(RegExp(r'/+$'), ''),
       token: _token.text.trim(),
     );
-    final ok = await client.checkHealth();
+    final problem = await client.checkHealth();
     client.close();
 
     if (!mounted) return;
     setState(() {
       _testing = false;
-      _testResult = ok ? 'Server answered' : 'No answer from that address';
+      _testResult = problem ?? 'Server answered';
     });
   }
 

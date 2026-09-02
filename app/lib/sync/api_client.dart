@@ -78,14 +78,28 @@ class ApiClient {
     }
   }
 
-  Future<bool> checkHealth() async {
+  /// Returns null when the server answered, or a description of what went
+  /// wrong.
+  ///
+  /// The reason is carried out rather than collapsed to a boolean. A swallowed
+  /// exception here once cost an hour: the app said "no answer" while the same
+  /// request from the phone's own shell succeeded, and the cause (a missing
+  /// INTERNET permission in the release build) was in the exception nobody
+  /// could see.
+  Future<String?> checkHealth() async {
     try {
       final response = await _client
           .get(Uri.parse('$baseUrl/health'))
           .timeout(const Duration(seconds: 10));
-      return response.statusCode == 200;
-    } catch (_) {
-      return false;
+      if (response.statusCode == 200) return null;
+      return 'Server answered with ${response.statusCode}';
+    } on SocketException catch (e) {
+      return 'Cannot reach $baseUrl: ${e.message}'
+          '${e.osError == null ? '' : ' (${e.osError!.message})'}';
+    } on FormatException catch (e) {
+      return 'That address is not a valid URL: ${e.message}';
+    } catch (e) {
+      return '$e';
     }
   }
 
